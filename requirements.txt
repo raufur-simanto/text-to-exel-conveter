@@ -1,0 +1,4 @@
+pyinstaller
+pandas
+openpyxl
+PyQT5
