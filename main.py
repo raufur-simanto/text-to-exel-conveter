@@ -1,9 +1,18 @@
 
 import sys
+from collections import defaultdict
+
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.styles import Font, Alignment
 from datetime import datetime, timedelta
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit,
                              QPushButton, QTableWidget, QTableWidgetItem, QFileDialog)
+from PyQt5.QtCore import Qt
+
+
+data_length = []
+
 
 # Function to convert 24-hour time to 12-hour AM/PM format
 def convert_time_format(time_str):
@@ -19,6 +28,21 @@ def calculate_time_difference(time_out, time_in):
     return diff
 
 
+# Function to add total time diff per eid to the data frame
+def append_summary(track_eid, df, last_row):
+    summary_rows = []
+    summary_rows.append({'Status': '', 'E. ID': '', 'Date': '', 'Time': '', 'Difference(O-I)': ''}) ## empty row
+    summary_rows.append({'Status': '', 'E. ID': '', 'Date': 'Total', 'Time': '', 'Difference(O-I)': ''}) ## header "Total"
+    summary_rows.append({'Status': '', 'E. ID': 'EID', 'Date': 'Date', 'Time': '', 'Difference(O-I)': 'Difference'})
+
+    for eid, total_diff in track_eid.items():
+        summary_rows.append({'Status': '', 'E. ID': eid, 'Date': last_row["Date"], 'Time': '', 'Difference(O-I)': format_time_difference(total_diff)})
+        
+    summary = pd.DataFrame(summary_rows)
+
+    df = pd.concat([df, summary], ignore_index=True)
+    return df
+
 # Function to format time difference in AM/PM format
 def format_time_difference(diff):
     seconds = diff.total_seconds()
@@ -27,6 +51,30 @@ def format_time_difference(diff):
     time_str = '{:02}:{:02}:{:02}'.format(int(hours), int(minutes), int(seconds))
     print(f"time_str: {time_str}")
     return time_str
+
+
+def modify_exel(exel_file):
+    wb = load_workbook(exel_file)
+    ws = wb.active
+
+    # Center align all cells in the worksheet
+    center_alignment = Alignment(horizontal='center', vertical='center')
+    for row in ws.iter_rows():
+        for cell in row:
+            cell.alignment = center_alignment
+
+    # Apply bold font and a different color to the last row
+    bold_font_for_total = Font(bold=True, color="FF0000")
+    bold_font = Font(bold=True)
+
+    for cell in ws[data_length[0] + 3]:
+        cell.font = bold_font_for_total
+
+    for cell in ws[data_length[0] + 4]:
+        cell.font = bold_font
+
+    wb.save(exel_file)
+    
 
 
 def process_file(input_file):
@@ -43,25 +91,32 @@ def process_file(input_file):
     df['Time'] = df['Time'].apply(lambda x: convert_time_format(x))
     df['Difference(O-I)'] = ''
 
-    total_diff = timedelta()
+    data_length.append(len(df))
+
+    ### track eid
+    track_eid = defaultdict(lambda: timedelta())
+
+
 
     for i in range(0, len(df) - 1, 2):
+        eid = df.at[i, "E. ID"]
+
         time_out = df.at[i, 'Time']
         time_in = df.at[i + 1, 'Time']
         diff = calculate_time_difference(time_out, time_in)
         df.at[i, 'Difference(O-I)'] = str(diff)
-        total_diff += diff
+
+        #### update eid and total diff value
+        track_eid[eid] += diff
+        # total_diff += diff
 
     #### last row data
     last_row = df.iloc[-1]
 
-    # Append summary rows
-    summary_rows = pd.DataFrame([
-        {'Status': 'Total', 'E. ID': last_row["E. ID"], 'Date': last_row["Date"], 'Time': '', 'Difference(O-I)': format_time_difference(total_diff)}
-    ])
+    df = append_summary(track_eid, df, last_row)
 
-    df = pd.concat([df, summary_rows], ignore_index=True)
     return df
+
 
 
 class App(QWidget):
@@ -120,13 +175,14 @@ class App(QWidget):
     def display_output(self, df):
         self.table.setColumnCount(len(df.columns))
         self.table.setRowCount(len(df))
-
         self.table.setHorizontalHeaderLabels(df.columns)
 
         for i in range(len(df)):
             for j in range(len(df.columns)):
-                self.table.setItem(i, j, QTableWidgetItem(str(df.iat[i, j])))
-
+                item = QTableWidgetItem(str(df.iat[i, j]))
+                item.setTextAlignment(Qt.AlignCenter)  # Center-align the text
+                self.table.setItem(i, j, item)
+                
     def save_to_excel(self):
         if self.df is not None:
             options = QFileDialog.Options()
@@ -135,6 +191,7 @@ class App(QWidget):
                 if not save_path.endswith('.xlsx'):
                     save_path += '.xlsx'
                 self.df.to_excel(save_path, index=False)
+                modify_exel(save_path)
                 self.display_message(f"File saved successfully at {save_path}")
 
     def display_error(self, message):
@@ -148,6 +205,7 @@ class App(QWidget):
         self.table.setRowCount(1)
         self.table.setColumnCount(1)
         self.table.setItem(0, 0, QTableWidgetItem(message))
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

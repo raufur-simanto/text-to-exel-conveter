@@ -15,7 +15,7 @@ This project is a Python-based application that converts specific text file data
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/text-to-excel-converter.git
+git clone https://github.com/raufur-simanto/text-to-excel-converter.git
 cd text-to-excel-converter
 ```
 
@@ -30,6 +30,11 @@ source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 
 ```bash
 pip install -r requirements.txt
+```
+
+### 4. Create an executable file
+```
+pyinstaller --onefile main.py
 ```
 
 ## Usage
@@ -52,7 +57,6 @@ python main.py
 ## Project Structure
 
 - `main.py`: The main application file that runs the GUI.
-- `processor.py`: Contains the logic for processing the text file data.
 - `requirements.txt`: List of Python dependencies.
 - `README.md`: Project documentation.
 
@@ -97,10 +101,6 @@ pip install -r requirements.txt
   ```bash
   export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
   ```
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
