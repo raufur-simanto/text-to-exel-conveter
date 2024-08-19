@@ -89,9 +89,13 @@ class App(QWidget):
                 item = QTableWidgetItem(str(df.iat[i, j]))
                 item.setTextAlignment(Qt.AlignCenter)  # Center-align the text
                 self.table.setItem(i, j, item)
+
                 
     def save_exel(self):
-        text, ok = QInputDialog.getText(self, 'Save File', 'Enter summary or data:')
+        options = ['summary', 'data']
+        text, ok = QInputDialog.getItem(self, "Save File", "Choose what to save:", options, 0, False)
+
+        # text, ok = QInputDialog.getText(self, 'Save File', 'Enter summary or data:')
         if text == 'data':
             if self.df is not None:
                 options = QFileDialog.Options()
@@ -124,11 +128,3 @@ class App(QWidget):
         self.table.setRowCount(1)
         self.table.setColumnCount(1)
         self.table.setItem(0, 0, QTableWidgetItem(message))
-
-
-# if __name__ == '__main__':
-#     # app = QApplication(sys.argv)
-#     # ex = App()
-#     # ex.show()
-#     # sys.exit(app.exec_())
-#     process_file("test.txt")

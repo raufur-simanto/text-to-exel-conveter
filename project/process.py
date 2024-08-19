@@ -34,9 +34,6 @@ def work_summary(df):
     result_df = pd.DataFrame(working_times, columns=['E. ID', 'Date', 'Total Working Time'])
     result_df['Date'] = result_df['Date'].apply(lambda x: str(x))
 
-    # Display the results
-    # print(result_df)
-
     # Optionally, save to a file
     # result_df.to_csv('working_times.txt', sep='\t', index=False)
     return result_df
