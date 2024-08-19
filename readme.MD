@@ -57,8 +57,12 @@ python main.py
 ## Project Structure
 
 - `main.py`: The main application file that runs the GUI.
-- `requirements.txt`: List of Python dependencies.
-- `README.md`: Project documentation.
+- `project/`
+- `| |--application.py`
+- `| |--process.py`
+- `| |--utils.py`
+- `requirements.txt`
+- `README.md`
 
 ## Dependencies
 
